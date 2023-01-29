@@ -17,7 +17,7 @@ class Geography(models.Model):
     geometry = models.TextField(blank=True)
 
     def __str__(self) -> str:
-        return f"{self.geo_name} - {self.dguid}"
+        return f"{self.geo_name} - {self.dguid} - {self.geo_level}"
 
     def set_geometry(self, geometry):
         self.geometry = geometry

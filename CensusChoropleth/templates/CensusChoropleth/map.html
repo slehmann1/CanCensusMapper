@@ -1,23 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+{%extends 'CensusChoropleth/select.html'%}
+{% block content %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-
-    {% load static %}
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-
-    <script src="https://leafletjs.com/examples/choropleth/us-states.js"></script>
-    <script src="{%static 'map.js'%}" defer></script>
-    <link rel="stylesheet" href="{%static 'styles.css'%}">
-
-</head>
+{% load static %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+<script src="https://leafletjs.com/examples/choropleth/us-states.js"></script>
+<script src="{%static 'map.js'%}" defer></script>
 
 <style>
     .info {
@@ -55,16 +43,12 @@
     }
 </style>
 
-<body>
-    <div id="map" class="map"></div>
-    <script>
-        var raw_data = '{{data|escapejs}}';
-    </script>
 
 
-    <!--{{data}}-->
+<div id="map" class="map"></div>
+<script>
+    var raw_data = '{{data|escapejs}}';
+    var characteristic = '{{characteristic|escapejs}}';
+</script>
 
-
-</body>
-
-</html>
+{% endblock %}

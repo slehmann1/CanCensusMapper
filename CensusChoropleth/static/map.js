@@ -38,7 +38,7 @@ function build_map() {
     };
 
     info.update = function (props) {
-        this._div.innerHTML = '<h4>UPDATE THIS VALUE BASED ON THE CHARACTERISTIC CHOSEN</h4>' + (props ?
+        this._div.innerHTML = '<h4>' +  characteristic  + '</h4>' + (props ?
             '<b>' + props.name + '</b><br />' + props.value
             : 'Hover over a region');
     };
@@ -83,7 +83,6 @@ function onEachFeature(feature, layer) {
     });
 
 }
-
 function layer_hover(e) {
     var layer = e.target;
 
