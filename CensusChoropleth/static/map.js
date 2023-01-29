@@ -112,6 +112,11 @@ function layer_click(e) {
 
 //TODO: Make this scalable based on mins/maxes/outliers/etc.
 function getColor(d) {
+
+    if (d =="N/A"){
+        return '#FF0000'
+    }
+
     return d > 10000000 ? '#800026' :
         d > 5000000 ? '#BD0026' :
             d > 2000000 ? '#E31A1C' :

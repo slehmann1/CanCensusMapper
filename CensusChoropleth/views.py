@@ -98,11 +98,11 @@ class Map(View):
             geo_levels = geo_levels.filter(Q(name = "Province") | Q(name="Territory"))
         else:
             geo_levels = geo_levels.filter(name = level_name)
-        geo_levels = geo_levels
 
         characteristic = Characteristic.objects.get(char_name = char_name)
 
-        geos = list(Geography.objects.filter(geo_level__in = geo_levels))
+        filt = Geography.objects.filter(geo_level__in = geo_levels)
+        geos = list(filt)     
 
         # Generate Text
         text = Map._GEO_HEAD
@@ -113,7 +113,10 @@ class Map(View):
 
             # Add properties
             props = '"name":"'+geo.geo_name+'",'
-            props += '"value":'+str(datum.value)
+            if datum.value is None:
+                props += '"value":'+'"N/A"'
+            else:
+                props += '"value":'+str(datum.value)
             text+= ''.join([add[0],Map._PROP_SPLIT,props,add[1]])
             
             text+=","

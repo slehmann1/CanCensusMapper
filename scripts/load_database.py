@@ -22,9 +22,6 @@ _GEO_DATA_COLS = ["DGUID","geometry"]
 
 #TODO: Unit test and update run properly
 def run():
-    add_geography()
-
-def run_archive():
     if not os.path.isfile(_FILENAME+".parquet"):
         # Download CSV
         print("Downloading dta")
@@ -195,6 +192,12 @@ def build_databases(df):
     geo_df = df.drop_duplicates(subset = ["DGUID"])
     length = len(geo_df)
     for i, row in geo_df.iterrows():
+        geo_name=row["GEO_NAME"]
+
+        # Escape double quotes in the string - JSON compatability
+        if '"' in geo_name:
+            geo_name = geo_name.replace('"', '\\"')
+
         geo = Geography(dguid = row['DGUID'], geo_name=row["GEO_NAME"], geo_level = geo_levels[row["GEO_LEVEL"]])
         geos[row['DGUID']] = geo
 
