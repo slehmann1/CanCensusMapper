@@ -1,8 +1,9 @@
 var geojson, map, info, hovered_geo, hovered_val;
 var hovered = false;
 
-//TODO: MAKE SMART
-grades = [0, 100000, 200000, 500000, 1000000, 2000000, 5000000]
+//#edf8fb
+var colors = ['#edf8fb', '#bfd3e6', '#9ebcda', '#8c96c6', '#8c6bb1', '#88419d', '#6e016b']
+var naColor = '#525252'
 
 build_map();
 
@@ -38,7 +39,7 @@ function build_map() {
     };
 
     info.update = function (props) {
-        this._div.innerHTML = '<h4>' +  characteristic  + '</h4>' + (props ?
+        this._div.innerHTML = '<h4>' + characteristic + '</h4>' + (props ?
             '<b>' + props.name + '</b><br />' + props.value
             : 'Hover over a region');
     };
@@ -50,12 +51,21 @@ function build_map() {
 
         var div = L.DomUtil.create('div', 'info legend'), labels = [];
 
+        div.innerHTML +=
+            '<i style="background:' + getColor(leg_vals[0]) + '"></i> ≤ ' + leg_vals[0] + '<br>';
+
         // loop through the value intervals and generate a label with a colored square for each interval
-        for (var i = 0; i < grades.length; i++) {
+        for (var i = 0; i < leg_vals.length - 1; i++) {
             div.innerHTML +=
-                '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
-                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                '<i style="background:' + getColor(leg_vals[i] + 1) + '"></i> ' +
+                leg_vals[i] + '&ndash;' + leg_vals[i + 1] + '<br>';
         }
+
+        div.innerHTML +=
+            '<i style="background:' + getColor(leg_vals[leg_vals.length]) + '"></i> ≥ ' + leg_vals[leg_vals.length - 1] + '<br>';
+
+        div.innerHTML +=
+            '<i style="background:' + naColor + '"></i> No Data';
 
         return div;
     };
@@ -110,20 +120,20 @@ function layer_click(e) {
     hovered_val = geo.feature.properties.value;
 }
 
+
 //TODO: Make this scalable based on mins/maxes/outliers/etc.
 function getColor(d) {
 
-    if (d =="N/A"){
-        return '#FF0000'
+    if (d == "N/A") {
+        return naColor;
     }
 
-    return d > 10000000 ? '#800026' :
-        d > 5000000 ? '#BD0026' :
-            d > 2000000 ? '#E31A1C' :
-                d > 1000000 ? '#FC4E2A' :
-                    d > 500000 ? '#FD8D3C' :
-                        d > 200000 ? '#FEB24C' :
-                            d > 100000 ? '#FED976' :
-                                '#FFEDA0';
+    for (i = 0; i < leg_vals.length; i++) {
+        if (d <= leg_vals[i]) {
+            return colors[i]
+        }
+    }
+
+    return colors[colors.length - 1];
 }
 

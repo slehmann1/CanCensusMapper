@@ -43,12 +43,22 @@
     }
 </style>
 
-
-
 <div id="map" class="map"></div>
 <script>
     var raw_data = '{{data|escapejs}}';
-    var characteristic = '{{characteristic|escapejs}}';
+    
+    var leg_vals = JSON.parse('{{ leg_vals|escapejs }}')
+    
+
+    const urlParams = new URLSearchParams(window.location.search);
+    var geo_level = urlParams.get("geolevel");
+    var characteristic = urlParams.get("characteristic");
+
+    char_select = document.getElementById("characteristic");
+    char_select.value = characteristic;
+
+    geo_select = document.getElementById("geolevel");
+    geo_select.value = geo_level;
 </script>
 
 {% endblock %}

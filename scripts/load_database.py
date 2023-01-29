@@ -14,7 +14,7 @@ _CEN_URL = "https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/detai
 _FILENAME_KEEP = "98-401-X2021005_English_CSV_data.csv"
 _TEMP_LOC = '\\temp'
 _ZIP_FILENAME = "download.zip"
-_MAX_MEM_CONSUMPTION = 85
+_MAX_MEM_CONSUMPTION = 90
 _GEO_LEVELS = ['Country', 'Province', 'Census division', 'Census subdivision','Territory']
 _GEO_DATA_LOC = ["mapData/Census Sub Divisions/lcsd000b21a_e.shp","mapData/Provinces/lpr_000b21a_e.shp", "mapData/Census Divisions/lcd_000b21a_e.shp"]
 _GEO_DATA_COLS = ["DGUID","geometry"]
@@ -198,7 +198,7 @@ def build_databases(df):
         if '"' in geo_name:
             geo_name = geo_name.replace('"', '\\"')
 
-        geo = Geography(dguid = row['DGUID'], geo_name=row["GEO_NAME"], geo_level = geo_levels[row["GEO_LEVEL"]])
+        geo = Geography(dguid = row['DGUID'], geo_name=geo_name, geo_level = geo_levels[row["GEO_LEVEL"]])
         geos[row['DGUID']] = geo
 
         if(i%1000 ==0):

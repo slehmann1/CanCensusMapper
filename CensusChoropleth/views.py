@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from CensusChoropleth.models import Geography, Characteristic, Datum, GeoLevel
-import json
+import numpy as np
+import math
 from django.views import View
 from django.db.models import Q
+import json
 
 # Create your views here.
 
@@ -38,12 +40,16 @@ class Map(View):
 
     GEO_LEVELS = ['Provinces and Territories', 'Census Divisions', 'Census Subdivisions']
     _SINGULAR_GEO_LEVELS = ['Provinces and Territories', 'Census division', 'Census subdivision']
+    _LEGEND_STEPS = 6
 
     def get(self, request):
         geolevel = request.GET.get("geolevel", Map.GEO_LEVELS[0])
         char_name = request.GET.get("characteristic", "Population, 2021")
         
-        context = {"data": Map.gen_text(geolevel, char_name), "geo_levels":Map.GEO_LEVELS, "characteristics":Map.get_char_list(), "characteristic":char_name}
+        data, leg_vals = Map.gen_text(geolevel, char_name)
+
+        context = {"data": data,"leg_vals":json.dumps(list(leg_vals)), "geo_levels":Map.GEO_LEVELS, "characteristics":Map.get_char_list()}
+        print(f"Legend Values: {leg_vals}")
         return render(request, "CensusChoropleth/map.html", context)
 
     #TODO: Unit test - Req database
@@ -104,19 +110,24 @@ class Map(View):
         filt = Geography.objects.filter(geo_level__in = geo_levels)
         geos = list(filt)     
 
+        #geos = [geos[3925]]
+
+        values = []
+
         # Generate Text
         text = Map._GEO_HEAD
         # TODO: Batch requests from datum model to decrease database calls
         for geo in geos:
             add = geo.geometry[len(Map._GEO_HEAD):len(geo.geometry)-len(Map._GEO_TAIL)].split(Map._PROP_SPLIT)
             datum = Datum.objects.get(geo=geo, characteristic=characteristic)
-
+            value = datum.value
             # Add properties
             props = '"name":"'+geo.geo_name+'",'
-            if datum.value is None:
+            if value is None:
                 props += '"value":'+'"N/A"'
             else:
-                props += '"value":'+str(datum.value)
+                props += '"value":'+str(value)
+                values.append(value)
             text+= ''.join([add[0],Map._PROP_SPLIT,props,add[1]])
             
             text+=","
@@ -124,7 +135,74 @@ class Map(View):
         # Remove trailing comma
         text = text[0:len(text)-1]
         text+=Map._GEO_TAIL
+        leg_ranges = Map.legend_ranges(values)
+
+        return text, leg_ranges
+
+    @staticmethod
+    def legend_ranges(values):
+        """For a given list of values generates a numpy array of suitable legend steps
+
+        Args:
+            values ([float]): values to create legend steps fro
+
+        Returns:
+            [float]: legend steps
+        """
+        quant_025 = np.quantile(values, 0.25)
+        quant_075 = np.quantile(values, 0.75)
+        iqr = quant_075 - quant_025
+
+        min_val, max_val = quant_025 - 3 * iqr,quant_075 + 3 * iqr
+
+        if min_val<0 and min(values)>=0:
+            min_val = 0
+
+        min_val, max_val = Map.round_leg_val(min_val, max_val)
         
-        return text
+
+        print(f"Min {min_val}, max {max_val}")
+
+        # Determine the number of decimals to round the legend steps to, based on what the maximum value is
+        decs = 0
+        val = abs(max_val)
+
+        while val<50:
+            val*=10
+            decs+=1
+
+        return np.round(np.arange(min_val,max_val,(max_val-min_val)/Map._LEGEND_STEPS),decs)
+
+    @staticmethod
+    def round_leg_val(min_val, max_val):
+        """Rounds values to numbers suitable for legend values.
+
+        Args:
+            The value to round (int)
+
+        Raises:
+            TypeError: _description_
+
+        Returns:
+            _type_: A rounded value
+        """
+        diff = max_val - min_val
+
+        first_dig = int(str(diff)[0])
+        num_digs = len(str(int(diff)))
+
+        if first_dig < 3:
+            num_digs -= 1
+
+        diff = math.ceil(diff/(10**(num_digs-1)))*10**(num_digs-1)
+
+
+
+
+        #min_val = round(min_val/(diff/2/Map._LEGEND_STEPS))*diff/2/Map._LEGEND_STEPS
+        max_val = min_val+diff
+
+        return min_val, max_val
+
 
 
