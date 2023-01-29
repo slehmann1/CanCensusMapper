@@ -1,0 +1,10 @@
+
+.env
+*.pyc
+*.dbf
+*.prj
+*.shp
+*.shx
+*.sqlite3
+*.sqlite3
+*.parquet

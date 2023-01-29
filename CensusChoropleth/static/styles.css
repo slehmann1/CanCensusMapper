@@ -1,0 +1,17 @@
+       .column {
+           flex: 50%;
+       }
+
+       .row {
+           display: flex;
+       }
+
+       .center {
+           text-align: center;
+       }
+
+       .map {
+           height: 1000px;
+       }
+
+      
