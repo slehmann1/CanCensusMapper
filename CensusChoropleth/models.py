@@ -10,8 +10,8 @@ class GeoLevel(models.Model):
 
 
 class Geography(models.Model):
-    dguid = models.CharField(max_length=14, blank=False, null=False)
-    geo_name = models.CharField(max_length=25, blank=False, null=False)
+    dguid = models.CharField(max_length=20, blank=False, null=False)
+    geo_name = models.CharField(max_length=100, blank=False, null=False)
     geo_level = models.ForeignKey(
         GeoLevel, on_delete=models.CASCADE, blank=False, null=False)
     geometry = models.TextField(blank=True)
@@ -24,7 +24,7 @@ class Geography(models.Model):
 
 
 class Characteristic(models.Model):
-    char_name = models.CharField(max_length=100, blank=False, null=False)
+    char_name = models.CharField(max_length=200, blank=False, null=False)
 
     def __str__(self) -> str:
         return f"{self.char_name}"

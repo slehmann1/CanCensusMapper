@@ -15,12 +15,15 @@ _FILENAME_KEEP = "98-401-X2021005_English_CSV_data.csv"
 _TEMP_LOC = '\\temp'
 _ZIP_FILENAME = "download.zip"
 _MAX_MEM_CONSUMPTION = 90
-_GEO_LEVELS = ['Country', 'Province', 'Census division', 'Census subdivision','Territory']
-_GEO_DATA_LOC = ["mapData/Census Sub Divisions/lcsd000b21a_e.shp","mapData/Provinces/lpr_000b21a_e.shp", "mapData/Census Divisions/lcd_000b21a_e.shp"]
-_GEO_DATA_COLS = ["DGUID","geometry"]
+_MAX_BULK_CREATES = 300000
+_GEO_LEVELS = ['Country', 'Province', 'Census division',
+               'Census subdivision', 'Territory']
+_GEO_DATA_LOC = ["mapData/Census Sub Divisions/lcsd000b21a_e.shp",
+                 "mapData/Provinces/lpr_000b21a_e.shp", "mapData/Census Divisions/lcd_000b21a_e.shp"]
+_GEO_DATA_COLS = ["DGUID", "geometry"]
 
 
-#TODO: Unit test and update run properly
+# TODO: Unit test and update run properly
 def run():
     if not os.path.isfile(_FILENAME+".parquet"):
         # Download CSV
@@ -33,8 +36,7 @@ def run():
         print("Files already downloaded. No need to download files")
         data = load_parquet()
 
-    
-    print ("Dataframe loaded")
+    print("Dataframe loaded")
     print("DF columns:")
     print(data.columns.values)
 
@@ -83,8 +85,9 @@ def save_csv_parquet():
     del_csv(_FILENAME+".csv")
     return df
 
+
 def load_parquet():
-    """Loads a parquet representing the census 
+    """Loads a parquet representing the census
 
     Returns:
         Dataframe: The parquet loaded as a dataframe
@@ -92,6 +95,7 @@ def load_parquet():
     df = pd.read_parquet(_FILENAME+".parquet")
     print("Parquet loaded")
     return df
+
 
 def del_csv(filename):
     """Deletes the CSV at the filename
@@ -110,16 +114,17 @@ def add_geography():
     for geo in Geography.objects.all():
         geos[geo.dguid] = geo
 
-    cad = gpd.GeoDataFrame(columns = _GEO_DATA_COLS)
+    cad = gpd.GeoDataFrame(columns=_GEO_DATA_COLS)
 
-    for i, datum_loc in enumerate (_GEO_DATA_LOC):
+    for i, datum_loc in enumerate(_GEO_DATA_LOC):
         x = gpd.read_file(datum_loc)
         print(f"CRS: {x.crs}")
-        cad = gpd.GeoDataFrame(pd.concat([cad,x], ignore_index=True))
-        print(f"Loaded geography data {i} of {len(_GEO_DATA_LOC)}, length is {len(x)}")
+        cad = gpd.GeoDataFrame(pd.concat([cad, x], ignore_index=True))
+        print(
+            f"Loaded geography data {i} of {len(_GEO_DATA_LOC)}, length is {len(x)}")
 
     length = len(cad)
-    cad.set_crs(crs=3347,allow_override=True)
+    cad.set_crs(crs=3347, allow_override=True)
 
     # Set coordinate system properly
     cad = cad.to_crs(4326)
@@ -128,15 +133,16 @@ def add_geography():
 
     print(f"CRS: {cad.crs}")
 
-
     for i in range(len(cad)):
         try:
             row = cad.iloc[[i]]
-            geos[row['DGUID'].item()].set_geometry(gpd.GeoDataFrame.to_json(row[["geometry"]]))
+            geos[row['DGUID'].item()].set_geometry(
+                gpd.GeoDataFrame.to_json(row[["geometry"]]))
         except KeyError:
-            print(f"DGUID {row['DGUID'].item()} is not present in the geography model, but is present in the geography data")
+            print(
+                f"DGUID {row['DGUID'].item()} is not present in the geography model, but is present in the geography data")
 
-        if i%100 ==0:
+        if i % 100 == 0:
             print(f"Updated geometry of row {i} of {length}")
 
     print(f"Updated all geometry")
@@ -146,7 +152,7 @@ def add_geography():
     print(f"Bulk update of geography complete")
 
     null_vals = list(Geography.objects.filter(geometry=True))
-    if len(null_vals)>0:
+    if len(null_vals) > 0:
         print(f"Null geography values: {null_vals}")
 
 
@@ -172,8 +178,7 @@ def build_databases(df):
     # Note: Loops are separated and dictionaries are used to cache values to reduce the number of database calls
 
     for geo_l in _GEO_LEVELS:
-        geo_levels[geo_l] = GeoLevel(name = geo_l)
-
+        geo_levels[geo_l] = GeoLevel(name=geo_l)
 
     GeoLevel.objects.bulk_create(list(geo_levels.values()))
     print(f"Generated geography levels")
@@ -182,50 +187,54 @@ def build_databases(df):
     print(f"Generated char_names, length is {len(char_names)}")
 
     for char_name in char_names:
-        characteristic= Characteristic(char_name=char_name)
+        characteristic = Characteristic(char_name=char_name)
         characteristics[char_name] = characteristic
 
     print("Characteristic List Created")
     Characteristic.objects.bulk_create(list(characteristics.values()))
     print("Generated Characteristics")
 
-    geo_df = df.drop_duplicates(subset = ["DGUID"])
+    geo_df = df.drop_duplicates(subset=["DGUID"])
     length = len(geo_df)
     for i, row in geo_df.iterrows():
-        geo_name=row["GEO_NAME"]
+        geo_name = row["GEO_NAME"]
 
         # Escape double quotes in the string - JSON compatability
         if '"' in geo_name:
             geo_name = geo_name.replace('"', '\\"')
 
-        geo = Geography(dguid = row['DGUID'], geo_name=geo_name, geo_level = geo_levels[row["GEO_LEVEL"]])
+        geo = Geography(dguid=row['DGUID'], geo_name=geo_name,
+                        geo_level=geo_levels[row["GEO_LEVEL"]])
         geos[row['DGUID']] = geo
 
-        if(i%1000 ==0):
+        if (i % 1000 == 0):
             print(f"Loaded row {i} of {length}")
 
     Geography.objects.bulk_create((geos.values()))
     print("Created Geography")
 
     length = len(df)
+    consecutive_datums = 0
     for i, row in df.iterrows():
         geo = geos[row['DGUID']]
         characteristic = characteristics[row["CHARACTERISTIC_NAME"]]
 
-        datum = Datum(geo=geo, characteristic = characteristic, value = row["C1_COUNT_TOTAL"])
+        datum = Datum(geo=geo, characteristic=characteristic,
+                      value=row["C1_COUNT_TOTAL"])
 
-        #geo_list.append(geo)
+        # geo_list.append(geo)
         datum_list.append(datum)
+        consecutive_datums += 1
 
-        if(i%1000 ==0):
+        if (i % 1000 == 0):
             print(f"Loaded row {i} of {length}")
 
-            if psutil.virtual_memory()[2] >_MAX_MEM_CONSUMPTION:
+            if psutil.virtual_memory()[2] > _MAX_MEM_CONSUMPTION or consecutive_datums > _MAX_BULK_CREATES:
+                consecutive_datums = 0
                 Datum.objects.bulk_create(datum_list)
                 datum_list = []
                 print("Saved datums at intermediate point")
 
-        
     Datum.objects.bulk_create(datum_list)
 
     print("Database saved")

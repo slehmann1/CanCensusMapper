@@ -26,11 +26,10 @@ def print_characteristics(request, geoname):
     text = []
     for datum in data:
         text.append(str(datum))
-        
-    # text+=str(data[0])
-    # print(text)
+
     context = {"text": text}
     return render(request, "CensusChoropleth/print.html", context)
+
 
 class Map(View):
     _GEO_HEAD = '{"type": "FeatureCollection", "features": ['
@@ -38,21 +37,23 @@ class Map(View):
     _PROP_SPLIT = 'properties": {'
     _char_list = None
 
-    GEO_LEVELS = ['Provinces and Territories', 'Census Divisions', 'Census Subdivisions']
-    _SINGULAR_GEO_LEVELS = ['Provinces and Territories', 'Census division', 'Census subdivision']
+    GEO_LEVELS = ['Provinces and Territories',
+                  'Census Divisions', 'Census Subdivisions']
+    _SINGULAR_GEO_LEVELS = ['Provinces and Territories',
+                            'Census division', 'Census subdivision']
     _LEGEND_STEPS = 6
 
     def get(self, request):
         geolevel = request.GET.get("geolevel", Map.GEO_LEVELS[0])
         char_name = request.GET.get("characteristic", "Population, 2021")
-        
+
         data, leg_vals = Map.gen_text(geolevel, char_name)
 
-        context = {"data": data,"leg_vals":json.dumps(list(leg_vals)), "geo_levels":Map.GEO_LEVELS, "characteristics":Map.get_char_list()}
-        print(f"Legend Values: {leg_vals}")
+        context = {"data": data, "leg_vals": json.dumps(list(
+            leg_vals)), "geo_levels": Map.GEO_LEVELS, "characteristics": Map.get_char_list()}
         return render(request, "CensusChoropleth/map.html", context)
 
-    #TODO: Unit test - Req database
+    # TODO: Unit test - Req database
     @staticmethod
     def get_char_list():
         # Memoize
@@ -61,7 +62,7 @@ class Map(View):
             Map._char_list = []
             for char in chars:
                 Map._char_list.append(char.char_name)
-        
+
         return Map._char_list
 
     @staticmethod
@@ -78,12 +79,12 @@ class Map(View):
             String: Singular representation of the geo_level
         """
         for i in range(len(Map.GEO_LEVELS)):
-            if geo_level==Map.GEO_LEVELS[i]:
+            if geo_level == Map.GEO_LEVELS[i]:
                 return Map._SINGULAR_GEO_LEVELS[i]
-        
+
         raise ValueError
 
-    #TODO: Unit test - Req database
+    # TODO: Unit test - Req database
     @staticmethod
     def gen_text(level_name, char_name):
         """Generates JSON representation of a feature collection which can be plotted by a map
@@ -101,22 +102,25 @@ class Map(View):
         # Return both provinces and territories together
         geo_levels = GeoLevel.objects.all()
         if level_name == Map.GEO_LEVELS[0]:
-            geo_levels = geo_levels.filter(Q(name = "Province") | Q(name="Territory"))
+            geo_levels = geo_levels.filter(
+                Q(name="Province") | Q(name="Territory"))
         else:
-            geo_levels = geo_levels.filter(name = level_name)
+            geo_levels = geo_levels.filter(name=level_name)
 
-        characteristic = Characteristic.objects.get(char_name = char_name)
+        characteristic = Characteristic.objects.get(char_name=char_name)
 
-        filt = Geography.objects.filter(geo_level__in = geo_levels)
-        geos = list(filt)     
+        filt = Geography.objects.filter(geo_level__in=geo_levels)
+        geos = list(filt)
 
         values = []
 
         # Generate Text
         text = Map._GEO_HEAD
         for geo in geos:
-            add = geo.geometry[len(Map._GEO_HEAD):len(geo.geometry)-len(Map._GEO_TAIL)].split(Map._PROP_SPLIT)
-            datum = Datum.objects.filter(geo=geo, characteristic=characteristic)[0]
+            add = geo.geometry[len(Map._GEO_HEAD):len(
+                geo.geometry)-len(Map._GEO_TAIL)].split(Map._PROP_SPLIT)
+            datum = Datum.objects.filter(
+                geo=geo, characteristic=characteristic)[0]
             value = datum.value
             # Add properties
             props = '"name":"'+geo.geo_name+'",'
@@ -125,13 +129,13 @@ class Map(View):
             else:
                 props += '"value":'+str(value)
                 values.append(value)
-            text+= ''.join([add[0],Map._PROP_SPLIT,props,add[1]])
-            
-            text+=","
-        
+            text += ''.join([add[0], Map._PROP_SPLIT, props, add[1]])
+
+            text += ","
+
         # Remove trailing comma
         text = text[0:len(text)-1]
-        text+=Map._GEO_TAIL
+        text += Map._GEO_TAIL
         leg_ranges = Map.legend_ranges(values)
 
         return text, leg_ranges
@@ -150,25 +154,22 @@ class Map(View):
         quant_075 = np.quantile(values, 0.75)
         iqr = quant_075 - quant_025
 
-        min_val, max_val = quant_025 - 3 * iqr,quant_075 + 3 * iqr
+        min_val, max_val = quant_025 - 3 * iqr, quant_075 + 3 * iqr
 
-        if min_val<0 and min(values)>=0:
+        if min_val < 0 and min(values) >= 0:
             min_val = 0
 
         min_val, max_val = Map.round_leg_val(min_val, max_val)
-        
-
-        print(f"Min {min_val}, max {max_val}")
 
         # Determine the number of decimals to round the legend steps to, based on what the maximum value is
         decs = 0
         val = abs(max_val)
 
-        while val<50:
-            val*=10
-            decs+=1
+        while val < 50:
+            val *= 10
+            decs += 1
 
-        return np.round(np.arange(min_val,max_val,(max_val-min_val)/Map._LEGEND_STEPS),decs)
+        return np.round(np.arange(min_val, max_val, (max_val-min_val)/Map._LEGEND_STEPS), decs)
 
     @staticmethod
     def round_leg_val(min_val, max_val):
@@ -196,6 +197,3 @@ class Map(View):
         max_val = min_val+diff
 
         return min_val, max_val
-
-
-

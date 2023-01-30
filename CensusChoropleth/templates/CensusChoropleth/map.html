@@ -93,10 +93,17 @@
     const urlParams = new URLSearchParams(window.location.search);
     var geo_level = urlParams.get("geolevel");
     var characteristic = urlParams.get("characteristic");
+    // Homepage
+    if (!characteristic){
+        characteristic = "Population, 2021"
+    }
+    if (!geo_level){
+        geo_level = "Provinces and Territories"
+    }
 
     char_select = document.getElementById("characteristic");
     char_select.value = characteristic;
-
+    
     geo_select = document.getElementById("geolevel");
     geo_select.value = geo_level;
 </script>
