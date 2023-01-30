@@ -118,7 +118,6 @@ function layer_click(e) {
 }
 
 
-//TODO: Make this scalable based on mins/maxes/outliers/etc.
 function getColor(d) {
 
     if (d == "N/A") {

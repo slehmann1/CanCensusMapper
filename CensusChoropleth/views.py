@@ -110,16 +110,13 @@ class Map(View):
         filt = Geography.objects.filter(geo_level__in = geo_levels)
         geos = list(filt)     
 
-        #geos = [geos[3925]]
-
         values = []
 
         # Generate Text
         text = Map._GEO_HEAD
-        # TODO: Batch requests from datum model to decrease database calls
         for geo in geos:
             add = geo.geometry[len(Map._GEO_HEAD):len(geo.geometry)-len(Map._GEO_TAIL)].split(Map._PROP_SPLIT)
-            datum = Datum.objects.get(geo=geo, characteristic=characteristic)
+            datum = Datum.objects.filter(geo=geo, characteristic=characteristic)[0]
             value = datum.value
             # Add properties
             props = '"name":"'+geo.geo_name+'",'
@@ -196,10 +193,6 @@ class Map(View):
 
         diff = math.ceil(diff/(10**(num_digs-1)))*10**(num_digs-1)
 
-
-
-
-        #min_val = round(min_val/(diff/2/Map._LEGEND_STEPS))*diff/2/Map._LEGEND_STEPS
         max_val = min_val+diff
 
         return min_val, max_val

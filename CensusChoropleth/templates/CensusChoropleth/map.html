@@ -1,12 +1,6 @@
 {%extends 'CensusChoropleth/select.html'%}
 {% block content %}
 
-{% load static %}
-<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-<script src="https://leafletjs.com/examples/choropleth/us-states.js"></script>
-<script src="{%static 'map.js'%}" defer></script>
-
 <style>
     .info {
         padding: 6px 8px;
@@ -54,7 +48,7 @@
     }
 
     select {
-        max-width: 80%;
+        max-width: 60%;
         /* So it doesn't overflow from it's parent */
     }
 
@@ -68,7 +62,26 @@
         border-bottom: 1px solid #DDD;
     }
 
+    .column {
+        flex: 50%;
+    }
+
+    .row {
+        display: flex;
+    }
+
+    .center {
+        text-align: center;
+    }
 </style>
+
+{% load static %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+<script src="https://leafletjs.com/examples/choropleth/us-states.js"></script>
+<script src="{%static 'map.js'%}" defer></script>
+
+
 
 <div id="map" class="map"></div>
 <script>
