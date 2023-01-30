@@ -27,7 +27,7 @@ function build_map() {
             return
         }
         var popLocation = e.latlng;
-        L.popup(popLocation, { content: '<div class = hover><h4>' + hovered_geo + '</h4>' + hovered_val + '</div>' }).openOn(map);
+        L.popup(popLocation, { content: '<div class = hover><h4>' + hovered_geo + '<br>' + hovered_val + '</h4></div>' }).openOn(map);
     });
 
     info = L.control();
@@ -39,9 +39,7 @@ function build_map() {
     };
 
     info.update = function (props) {
-        this._div.innerHTML = '<h4>' + characteristic + '</h4>' + (props ?
-            '<b>' + props.name + '</b><br />' + props.value
-            : 'Hover over a region');
+        this._div.innerHTML = '<h4>' + characteristic + ':</h4>' + (props ? props.name + '<br /><b>' + props.value + '</b>' : '<br /> <br />');
     };
 
     info.addTo(map);
@@ -51,10 +49,10 @@ function build_map() {
 
         var div = L.DomUtil.create('div', 'info legend'), labels = [];
 
+        // Fill the text in the legend
         div.innerHTML +=
             '<i style="background:' + getColor(leg_vals[0]) + '"></i> ≤ ' + leg_vals[0] + '<br>';
 
-        // loop through the value intervals and generate a label with a colored square for each interval
         for (var i = 0; i < leg_vals.length - 1; i++) {
             div.innerHTML +=
                 '<i style="background:' + getColor(leg_vals[i] + 1) + '"></i> ' +
@@ -76,10 +74,9 @@ function build_map() {
 function style(feature) {
     return {
         fillColor: getColor(feature.properties.value),
-        weight: 2,
+        weight: 1,
         opacity: 1,
-        color: 'white',
-        dashArray: '3',
+        color: '#f7f0fa',
         fillOpacity: 0.7
     };
 }

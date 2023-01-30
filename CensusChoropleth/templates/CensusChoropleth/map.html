@@ -27,6 +27,7 @@
     h4 {
         margin: 0 0 5px;
         color: #555;
+        font-size: medium;
     }
 
     .legend {
@@ -41,14 +42,40 @@
         margin-right: 8px;
         opacity: 0.7;
     }
+
+    .map {
+        flex-grow: 1;
+    }
+
+    .container {
+        height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    select {
+        max-width: 80%;
+        /* So it doesn't overflow from it's parent */
+    }
+
+    option {
+        /* wrap text in compatible browsers */
+        -moz-white-space: pre-wrap;
+        -o-white-space: pre-wrap;
+        white-space: pre-wrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-bottom: 1px solid #DDD;
+    }
+
 </style>
 
 <div id="map" class="map"></div>
 <script>
     var raw_data = '{{data|escapejs}}';
-    
+
     var leg_vals = JSON.parse('{{ leg_vals|escapejs }}')
-    
+
 
     const urlParams = new URLSearchParams(window.location.search);
     var geo_level = urlParams.get("geolevel");
