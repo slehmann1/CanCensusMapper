@@ -2,53 +2,57 @@
 <html lang="en">
 
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-    integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="{%static 'styles.css'%}">
 </head>
 
-<body class ="container">
+<body class="container">
 
     <form action="{% url 'CensusChoropleth:map_select'%}" method="get">
         {%csrf_token%}
         <div class="center">
             <br>
             <label for="geolevel">Choose a geographic level: </label>
-    
+
             <select name="geolevel" id="geolevel">
                 {% for choice in geo_levels %}
                 <option value='{{choice}}'>{{choice}}</option>
                 {% endfor %}
             </select>
-    
+
             <br>
 
             <label for="characteristic">Choose a characteristic: </label>
-    
+
             <select name="characteristic" id="characteristic">
                 {% for choice in characteristics %}
                 <option value='{{choice}}'>{{choice}}</option>
                 {% endfor %}
             </select>
-    
+
             <br>
             <br>
-    
+
             <input type="submit" value="Generate Map">
             <br>
             <br>
-    
+
         </div>
     </form>
 
-   
 
-{% block content %}
-    
-{% endblock %}
+
+    {% block content %}
+
+    {% endblock %}
 </body>
+
 </html>
