@@ -6,8 +6,6 @@ import pandas as pd
 from CensusChoropleth.models import Geography, Characteristic, Datum, GeoLevel
 import psutil
 import geopandas as gpd
-import ee
-import geemap
 
 _FILENAME = "2021CensusData"
 _CEN_URL = "https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&FILETYPE=CSV&GEONO=005"
@@ -23,8 +21,17 @@ _GEO_DATA_LOC = ["mapData/Census Sub Divisions/lcsd000b21a_e.shp",
 _GEO_DATA_COLS = ["DGUID", "geometry"]
 
 
-# TODO: Unit test and update run properly
+# TODO: Unit test
 def run():
+    if not Geography.objects.all().exists():
+        print("Database empty, building database")
+        build_database()
+    else:
+        print("Database already populated, no need to build database")
+
+
+# TODO: Unit test
+def build_database():
     if not os.path.isfile(_FILENAME+".parquet"):
         # Download CSV
         print("Downloading dta")

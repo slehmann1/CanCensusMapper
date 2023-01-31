@@ -1,5 +1,5 @@
-
 .env
+.envs
 *.pyc
 *.dbf
 *.prj
