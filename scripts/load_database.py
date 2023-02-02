@@ -21,7 +21,6 @@ _GEO_DATA_LOC = ["mapData/Census Sub Divisions/lcsd000b21a_e.shp",
 _GEO_DATA_COLS = ["DGUID", "geometry"]
 
 
-# TODO: Unit test
 def run():
     if not Geography.objects.all().exists():
         print("Database empty, building database")
@@ -30,7 +29,6 @@ def run():
         print("Database already populated, no need to build database")
 
 
-# TODO: Unit test
 def build_database():
     if not os.path.isfile(_FILENAME+".parquet"):
         # Download CSV
@@ -67,7 +65,7 @@ def download_csv(url, keep_file, filename, remove_first_line=False):
     print(f"Start file download at this URL: {url}")
     urllib.request.urlretrieve(url, loc + _ZIP_FILENAME)
     print("Download complete")
-    with zipfile.ZipFile(loc + _ZIP_FILENAME, 'row') as zip_ref:
+    with zipfile.ZipFile(loc + _ZIP_FILENAME, 'r') as zip_ref:
         zip_ref.extractall(loc)
 
     # Rename/move the file of interest and delete the temporary directory
@@ -76,30 +74,30 @@ def download_csv(url, keep_file, filename, remove_first_line=False):
 
     # Sometimes the first line has to be removed due to additional header text
     if remove_first_line:
-        with open(filename, 'row') as fin:
+        with open(filename, 'r') as fin:
             data = fin.read().splitlines(True)
         with open(filename, 'w') as fout:
             fout.writelines(data[1:])
 
 
-def save_csv_parquet():
+def save_csv_parquet(filename=_FILENAME):
     """
     Loading CSVs are timeconsuming. Read in the CSV and save it as a parquet file which will be quicker to load in the future
     :return: The CSV as a dataframe
     """
-    df = pd.read_csv(_FILENAME+".csv", encoding="latin-1", dtype="str")
-    df.to_parquet(_FILENAME+".parquet", compression=None)
-    del_csv(_FILENAME+".csv")
+    df = pd.read_csv(filename+".csv", encoding="latin-1", dtype="str")
+    df.to_parquet(filename+".parquet", compression=None)
+    del_csv(filename+".csv")
     return df
 
 
-def load_parquet():
+def load_parquet(filename=_FILENAME):
     """Loads a parquet representing the census
 
     Returns:
         Dataframe: The parquet loaded as a dataframe
     """
-    df = pd.read_parquet(_FILENAME+".parquet")
+    df = pd.read_parquet(filename+".parquet")
     print("Parquet loaded")
     return df
 
@@ -113,7 +111,7 @@ def del_csv(filename):
     os.remove(os.getcwd() + "\\" + filename)
 
 
-def add_geography():
+def add_geography(suppress_prints=False):
 
     geos = {geo.dguid: geo for geo in Geography.objects.all()}
 
@@ -142,8 +140,10 @@ def add_geography():
             geos[row['DGUID'].item()].set_geometry(
                 gpd.GeoDataFrame.to_json(row[["geometry"]]))
         except KeyError:
-            print(
-                f"DGUID {row['DGUID'].item()} is not present in the geography model, but is present in the geography data")
+            if not suppress_prints:
+                # In the case of testing, less data is used. It is expected that this key error will be thrown repeatedly
+                print(
+                    f"DGUID {row['DGUID'].item()} is not present in the geography model, but is present in the geography data")
 
         if i % 100 == 0:
             print(f"Updated geometry of row {i} of {length}")
@@ -159,35 +159,46 @@ def add_geography():
         print(f"Null geography values: {null_vals}")
 
 
-def build_databases(df):
+def clear_databases():
+    """Deletes all objects in all models
+    """
+    GeoLevel.objects.all().delete()
+    Geography.objects.all().delete()
+    Characteristic.objects.all().delete()
+    Datum.objects.all().delete()
+    print("Cleared prior database")
+
+
+def gen_geo_levels(geo_levels_names=_GEO_LEVELS):
+    """Builds geo_levels based on the list _GEO_LEVELS
+    """
+    geo_levels = {geo_l: GeoLevel(name=geo_l) for geo_l in geo_levels_names}
+    GeoLevel.objects.bulk_create(list(geo_levels.values()))
+    print("Generated geography levels")
+    return geo_levels
+
+
+def build_databases(df, add_geography=True):
     """Generates databases based on a Pandas dataframe
 
     Args:
         df (DataFrame): Census data
     """
 
-    GeoLevel.objects.all().delete()
-    Geography.objects.all().delete()
-    Characteristic.objects.all().delete()
-    Datum.objects.all().delete()
+    clear_databases()
 
-    print("Cleared prior database")
     print(f"Loading database with {len(df)} lines in the dataframe")
     geos = {}
     characteristics = {}
     datum_list = []
 
-    geo_levels = {geo_l: GeoLevel(name=geo_l) for geo_l in _GEO_LEVELS}
-    GeoLevel.objects.bulk_create(list(geo_levels.values()))
-    print("Generated geography levels")
+    geo_levels = gen_geo_levels()
 
     char_names = (df["CHARACTERISTIC_NAME"].unique())
     print(f"Generated char_names, length is {len(char_names)}")
 
-    for char_name in char_names:
-        characteristic = Characteristic(char_name=char_name)
-        characteristics[char_name] = characteristic
-
+    characteristics = {char_name: Characteristic(
+        char_name=char_name) for char_name in char_names}
     print("Characteristic List Created")
     Characteristic.objects.bulk_create(list(characteristics.values()))
     print("Generated Characteristics")
@@ -236,4 +247,5 @@ def build_databases(df):
     Datum.objects.bulk_create(datum_list)
 
     print("Database saved")
-    add_geography()
+    if add_geography:
+        add_geography()
