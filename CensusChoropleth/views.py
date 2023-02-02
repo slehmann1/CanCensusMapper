@@ -23,10 +23,7 @@ def print_characteristics(request, geoname):
 
     data = list(Datum.objects.filter(geo=geo))
 
-    text = []
-    for datum in data:
-        text.append(str(datum))
-
+    text = [str(datum) for datum in data]
     context = {"text": text}
     return render(request, "CensusChoropleth/print.html", context)
 
@@ -59,9 +56,8 @@ class Map(View):
         # Memoize
         if Map._char_list is None:
             chars = Characteristic.objects.all()
-            Map._char_list = []
-            for char in chars:
-                Map._char_list.append(char.char_name)
+
+            Map._char_list = [char.char_name for char in chars]
 
         return Map._char_list
 
@@ -123,18 +119,18 @@ class Map(View):
                 geo=geo, characteristic=characteristic)[0]
             value = datum.value
             # Add properties
-            props = '"name":"'+geo.geo_name+'",'
+            props = f'"name":"{geo.geo_name}",'
             if value is None:
                 props += '"value":'+'"N/A"'
             else:
-                props += '"value":'+str(value)
+                props += f'"value":{str(value)}'
                 values.append(value)
             text += ''.join([add[0], Map._PROP_SPLIT, props, add[1]])
 
             text += ","
 
         # Remove trailing comma
-        text = text[0:len(text)-1]
+        text = text[:-1]
         text += Map._GEO_TAIL
         leg_ranges = Map.legend_ranges(values)
 

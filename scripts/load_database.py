@@ -36,7 +36,7 @@ def build_database():
         # Download CSV
         print("Downloading dta")
         download_csv(_CEN_URL, _FILENAME_KEEP, _FILENAME+".csv", False)
-        print(f"Finished download of census data")
+        print("Finished download of census data")
         data = save_csv_parquet()
 
     else:
@@ -115,11 +115,7 @@ def del_csv(filename):
 
 def add_geography():
 
-    geos = {}
-
-    # Build a dictionary of all objects to reduce database calls
-    for geo in Geography.objects.all():
-        geos[geo.dguid] = geo
+    geos = {geo.dguid: geo for geo in Geography.objects.all()}
 
     cad = gpd.GeoDataFrame(columns=_GEO_DATA_COLS)
 
@@ -152,11 +148,11 @@ def add_geography():
         if i % 100 == 0:
             print(f"Updated geometry of row {i} of {length}")
 
-    print(f"Updated all geometry")
+    print("Updated all geometry")
 
     Geography.objects.bulk_update(list(geos.values()), ["geometry"])
 
-    print(f"Bulk update of geography complete")
+    print("Bulk update of geography complete")
 
     null_vals = list(Geography.objects.filter(geometry=True))
     if len(null_vals) > 0:
@@ -178,17 +174,12 @@ def build_databases(df):
     print("Cleared prior database")
     print(f"Loading database with {len(df)} lines in the dataframe")
     geos = {}
-    geo_levels = {}
     characteristics = {}
     datum_list = []
 
-    # Note: Loops are separated and dictionaries are used to cache values to reduce the number of database calls
-
-    for geo_l in _GEO_LEVELS:
-        geo_levels[geo_l] = GeoLevel(name=geo_l)
-
+    geo_levels = {geo_l: GeoLevel(name=geo_l) for geo_l in _GEO_LEVELS}
     GeoLevel.objects.bulk_create(list(geo_levels.values()))
-    print(f"Generated geography levels")
+    print("Generated geography levels")
 
     char_names = (df["CHARACTERISTIC_NAME"].unique())
     print(f"Generated char_names, length is {len(char_names)}")
