@@ -16,8 +16,8 @@ _MAX_MEM_CONSUMPTION = 90
 _MAX_BULK_CREATES = 300000
 _GEO_LEVELS = ['Country', 'Province', 'Census division',
                'Census subdivision', 'Territory']
-_GEO_DATA_LOC = ["mapData/Census Sub Divisions/lcsd000b21a_e.shp",
-                 "mapData/Provinces/lpr_000b21a_e.shp", "mapData/Census Divisions/lcd_000b21a_e.shp"]
+_GEO_DATA_LOC = [os.getcwd() +"/CensusChoropleth/mapData/Census Sub Divisions/lcsd000b21a_e.shp",
+                 os.getcwd() +"/CensusChoropleth/mapData/Provinces/lpr_000b21a_e.shp", os.getcwd() +"/CensusChoropleth/mapData/Census Divisions/lcd_000b21a_e.shp"]
 _GEO_DATA_COLS = ["DGUID", "geometry"]
 
 
@@ -178,7 +178,7 @@ def gen_geo_levels(geo_levels_names=_GEO_LEVELS):
     return geo_levels
 
 
-def build_databases(df, add_geography=True):
+def build_databases(df, should_add_geography=True):
     """Generates databases based on a Pandas dataframe
 
     Args:
@@ -247,5 +247,5 @@ def build_databases(df, add_geography=True):
     Datum.objects.bulk_create(datum_list)
 
     print("Database saved")
-    if add_geography:
+    if should_add_geography:
         add_geography()
