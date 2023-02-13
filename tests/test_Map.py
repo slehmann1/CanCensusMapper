@@ -1,5 +1,5 @@
 from django.test import TestCase
-from scripts import load_database
+from CensusChoropleth.scripts import load_database
 from CensusChoropleth.models import Geography, Characteristic, Datum
 from CensusChoropleth.views import Map
 

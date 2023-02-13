@@ -1,5 +1,5 @@
 from django.test import TestCase
-from scripts import load_database
+from CensusChoropleth.scripts import load_database
 from CensusChoropleth.models import Geography, Characteristic, GeoLevel, Datum
 import random
 import io
@@ -13,6 +13,7 @@ _SEED = 1234567
 class LoadDatabaseTests(TestCase):
     COL_NAMES = ['CENSUS_YEAR', 'DGUID', 'ALT_GEO_CODE', 'GEO_LEVEL', 'GEO_NAME', 'TNR_SF', 'TNR_LF', 'DATA_QUALITY_FLAG', 'CHARACTERISTIC_ID', 'CHARACTERISTIC_NAME', 'CHARACTERISTIC_NOTE', 'C1_COUNT_TOTAL', 'SYMBOL', 'C2_COUNT_MEN+', 'SYMBOL.1', 'C3_COUNT_WOMEN+', 'SYMBOL.2', 'C10_RATE_TOTAL', 'SYMBOL.3', 'C11_RATE_MEN+', 'SYMBOL.4', 'C12_RATE_WOMEN+',
                  'SYMBOL.5']
+                 
 
     def test_run(self):
         """Tests the run function. Note: Only tests that a database is not built when it already exists. The database build function is covered under test_build_database
@@ -35,7 +36,7 @@ class LoadDatabaseTests(TestCase):
     def test_download_csv(self):
         # Test with a small CSV downloaded from statistics canada
         load_database.download_csv("https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&FILETYPE=CSV&GEONO=001",
-                                   "98-401-X2021001_Geo_starting_row.CSV", "test.csv", False)
+                                   "/98-401-X2021001_Geo_starting_row.CSV", "test.csv", False)
         df = pd.read_csv("test.csv")
         print(df["Geo Name"].values)
 
@@ -45,7 +46,7 @@ class LoadDatabaseTests(TestCase):
 
         # Verify correct deletion of first line
         load_database.download_csv("https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&FILETYPE=CSV&GEONO=001",
-                                   "98-401-X2021001_Geo_starting_row.CSV", "test.csv", True)
+                                   "/98-401-X2021001_Geo_starting_row.CSV", "test.csv", True)
         df = pd.read_csv("test.csv")
         self.assertListEqual(list(df.columns), [
                              "2021A000011124",	"Canada",	"2"])
@@ -55,7 +56,7 @@ class LoadDatabaseTests(TestCase):
         """Tests both the save_csv_parquet function and the load_parquet function
         """
         load_database.download_csv("https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&FILETYPE=CSV&GEONO=001",
-                                   "98-401-X2021001_Geo_starting_row.CSV", "test.csv", False)
+                                   "/98-401-X2021001_Geo_starting_row.CSV", "test.csv", False)
         unmodified = pd.read_csv("test.csv")
 
         load_database.save_csv_parquet("test")
@@ -95,7 +96,7 @@ class LoadDatabaseTests(TestCase):
                                      "GEO_LEVEL": ["Province", "Country", "Province"],
                                      "GEO_NAME": ["Alberta", "Canada", "Alberta"],
                                      "C1_COUNT_TOTAL": ["23", "37", "42"]})
-        load_database.build_databases(df, add_geography=False)
+        load_database.build_databases(df)
 
         self.assertEqual(len(GeoLevel.objects.all()), 5)
         self.assertEqual(len(Characteristic.objects.all()), 2)

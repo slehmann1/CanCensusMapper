@@ -6,18 +6,31 @@ import pandas as pd
 from CensusChoropleth.models import Geography, Characteristic, Datum, GeoLevel
 import psutil
 import geopandas as gpd
+from site_proj.settings import BASE_DIR
 
 _FILENAME = "2021CensusData"
 _CEN_URL = "https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&FILETYPE=CSV&GEONO=005"
 _FILENAME_KEEP = "98-401-X2021005_English_CSV_data.csv"
-_TEMP_LOC = '\\temp'
+_TEMP_LOC = "temp"
 _ZIP_FILENAME = "download.zip"
 _MAX_MEM_CONSUMPTION = 90
 _MAX_BULK_CREATES = 300000
-_GEO_LEVELS = ['Country', 'Province', 'Census division',
-               'Census subdivision', 'Territory']
-_GEO_DATA_LOC = [os.getcwd() +"/CensusChoropleth/mapData/Census Sub Divisions/lcsd000b21a_e.shp",
-                 os.getcwd() +"/CensusChoropleth/mapData/Provinces/lpr_000b21a_e.shp", os.getcwd() +"/CensusChoropleth/mapData/Census Divisions/lcd_000b21a_e.shp"]
+_GEO_LEVELS = [
+    "Country",
+    "Province",
+    "Census division",
+    "Census subdivision",
+    "Territory",
+]
+_GEO_DATA_LOC = [
+    os.path.join(
+        BASE_DIR, "CensusChoropleth/mapData/Census Sub Divisions/lcsd000b21a_e.shp"
+    ),
+    os.path.join(BASE_DIR, "CensusChoropleth/mapData/Provinces/lpr_000b21a_e.shp"),
+    os.path.join(
+        BASE_DIR, "CensusChoropleth/mapData/Census Divisions/lcd_000b21a_e.shp"
+    ),
+]
 _GEO_DATA_COLS = ["DGUID", "geometry"]
 
 
@@ -30,10 +43,10 @@ def run():
 
 
 def build_database():
-    if not os.path.isfile(_FILENAME+".parquet"):
+    if not os.path.isfile(_FILENAME + ".parquet"):
         # Download CSV
         print("Downloading dta")
-        download_csv(_CEN_URL, _FILENAME_KEEP, _FILENAME+".csv", False)
+        download_csv(_CEN_URL, _FILENAME_KEEP, _FILENAME + ".csv", False)
         print("Finished download of census data")
         data = save_csv_parquet()
 
@@ -58,25 +71,25 @@ def download_csv(url, keep_file, filename, remove_first_line=False):
     :return: None
     """
     # Create a temporary directory
-    loc = os.getcwd() + _TEMP_LOC + "\\"
+    loc = os.path.join(BASE_DIR,_TEMP_LOC)
     os.mkdir(loc)
 
     # Download the file as a zip file and extract it
     print(f"Start file download at this URL: {url}")
     urllib.request.urlretrieve(url, loc + _ZIP_FILENAME)
     print("Download complete")
-    with zipfile.ZipFile(loc + _ZIP_FILENAME, 'r') as zip_ref:
+    with zipfile.ZipFile(loc + _ZIP_FILENAME, "r") as zip_ref:
         zip_ref.extractall(loc)
 
     # Rename/move the file of interest and delete the temporary directory
-    os.rename(loc + keep_file, os.getcwd() + "\\" + filename)
+    os.rename(loc + keep_file, os.path.join(BASE_DIR, filename))
     shutil.rmtree(loc)
 
     # Sometimes the first line has to be removed due to additional header text
     if remove_first_line:
-        with open(filename, 'r') as fin:
+        with open(filename, "r") as fin:
             data = fin.read().splitlines(True)
-        with open(filename, 'w') as fout:
+        with open(filename, "w") as fout:
             fout.writelines(data[1:])
 
 
@@ -85,9 +98,9 @@ def save_csv_parquet(filename=_FILENAME):
     Loading CSVs are timeconsuming. Read in the CSV and save it as a parquet file which will be quicker to load in the future
     :return: The CSV as a dataframe
     """
-    df = pd.read_csv(filename+".csv", encoding="latin-1", dtype="str")
-    df.to_parquet(filename+".parquet", compression=None)
-    del_csv(filename+".csv")
+    df = pd.read_csv(filename + ".csv", encoding="latin-1", dtype="str")
+    df.to_parquet(filename + ".parquet", compression=None)
+    del_csv(filename + ".csv")
     return df
 
 
@@ -97,7 +110,7 @@ def load_parquet(filename=_FILENAME):
     Returns:
         Dataframe: The parquet loaded as a dataframe
     """
-    df = pd.read_parquet(filename+".parquet")
+    df = pd.read_parquet(filename + ".parquet")
     print("Parquet loaded")
     return df
 
@@ -112,7 +125,6 @@ def del_csv(filename):
 
 
 def add_geography(suppress_prints=False):
-
     geos = {geo.dguid: geo for geo in Geography.objects.all()}
 
     cad = gpd.GeoDataFrame(columns=_GEO_DATA_COLS)
@@ -121,8 +133,7 @@ def add_geography(suppress_prints=False):
         x = gpd.read_file(datum_loc)
         print(f"CRS: {x.crs}")
         cad = gpd.GeoDataFrame(pd.concat([cad, x], ignore_index=True))
-        print(
-            f"Loaded geography data {i} of {len(_GEO_DATA_LOC)}, length is {len(x)}")
+        print(f"Loaded geography data {i} of {len(_GEO_DATA_LOC)}, length is {len(x)}")
 
     length = len(cad)
     cad.set_crs(crs=3347, allow_override=True)
@@ -137,13 +148,15 @@ def add_geography(suppress_prints=False):
     for i in range(len(cad)):
         try:
             row = cad.iloc[[i]]
-            geos[row['DGUID'].item()].set_geometry(
-                gpd.GeoDataFrame.to_json(row[["geometry"]]))
+            geos[row["DGUID"].item()].set_geometry(
+                gpd.GeoDataFrame.to_json(row[["geometry"]])
+            )
         except KeyError:
             if not suppress_prints:
                 # In the case of testing, less data is used. It is expected that this key error will be thrown repeatedly
                 print(
-                    f"DGUID {row['DGUID'].item()} is not present in the geography model, but is present in the geography data")
+                    f"DGUID {row['DGUID'].item()} is not present in the geography model, but is present in the geography data"
+                )
 
         if i % 100 == 0:
             print(f"Updated geometry of row {i} of {length}")
@@ -160,8 +173,7 @@ def add_geography(suppress_prints=False):
 
 
 def clear_databases():
-    """Deletes all objects in all models
-    """
+    """Deletes all objects in all models"""
     GeoLevel.objects.all().delete()
     Geography.objects.all().delete()
     Characteristic.objects.all().delete()
@@ -170,8 +182,7 @@ def clear_databases():
 
 
 def gen_geo_levels(geo_levels_names=_GEO_LEVELS):
-    """Builds geo_levels based on the list _GEO_LEVELS
-    """
+    """Builds geo_levels based on the list _GEO_LEVELS"""
     geo_levels = {geo_l: GeoLevel(name=geo_l) for geo_l in geo_levels_names}
     GeoLevel.objects.bulk_create(list(geo_levels.values()))
     print("Generated geography levels")
@@ -194,11 +205,12 @@ def build_databases(df, should_add_geography=True):
 
     geo_levels = gen_geo_levels()
 
-    char_names = (df["CHARACTERISTIC_NAME"].unique())
+    char_names = df["CHARACTERISTIC_NAME"].unique()
     print(f"Generated char_names, length is {len(char_names)}")
 
-    characteristics = {char_name: Characteristic(
-        char_name=char_name) for char_name in char_names}
+    characteristics = {
+        char_name: Characteristic(char_name=char_name) for char_name in char_names
+    }
     print("Characteristic List Created")
     Characteristic.objects.bulk_create(list(characteristics.values()))
     print("Generated Characteristics")
@@ -212,11 +224,14 @@ def build_databases(df, should_add_geography=True):
         if '"' in geo_name:
             geo_name = geo_name.replace('"', '\\"')
 
-        geo = Geography(dguid=row['DGUID'], geo_name=geo_name,
-                        geo_level=geo_levels[row["GEO_LEVEL"]])
-        geos[row['DGUID']] = geo
+        geo = Geography(
+            dguid=row["DGUID"],
+            geo_name=geo_name,
+            geo_level=geo_levels[row["GEO_LEVEL"]],
+        )
+        geos[row["DGUID"]] = geo
 
-        if (i % 1000 == 0):
+        if i % 1000 == 0:
             print(f"Loaded row {i} of {length}")
 
     Geography.objects.bulk_create((geos.values()))
@@ -225,20 +240,24 @@ def build_databases(df, should_add_geography=True):
     length = len(df)
     consecutive_datums = 0
     for i, row in df.iterrows():
-        geo = geos[row['DGUID']]
+        geo = geos[row["DGUID"]]
         characteristic = characteristics[row["CHARACTERISTIC_NAME"]]
 
-        datum = Datum(geo=geo, characteristic=characteristic,
-                      value=row["C1_COUNT_TOTAL"])
+        datum = Datum(
+            geo=geo, characteristic=characteristic, value=row["C1_COUNT_TOTAL"]
+        )
 
         # geo_list.append(geo)
         datum_list.append(datum)
         consecutive_datums += 1
 
-        if (i % 1000 == 0):
+        if i % 1000 == 0:
             print(f"Loaded row {i} of {length}")
 
-            if psutil.virtual_memory()[2] > _MAX_MEM_CONSUMPTION or consecutive_datums > _MAX_BULK_CREATES:
+            if (
+                psutil.virtual_memory()[2] > _MAX_MEM_CONSUMPTION
+                or consecutive_datums > _MAX_BULK_CREATES
+            ):
                 consecutive_datums = 0
                 Datum.objects.bulk_create(datum_list)
                 datum_list = []
