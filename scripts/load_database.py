@@ -14,7 +14,7 @@ _FILENAME_KEEP = "98-401-X2021005_English_CSV_data.csv"
 _TEMP_LOC = "temp"
 _ZIP_FILENAME = "download.zip"
 _MAX_MEM_CONSUMPTION = 90
-_MAX_BULK_CREATES = 500000
+_MAX_BULK_CREATES = 300000
 _GEO_LEVELS = [
     "Country",
     "Province",
@@ -32,11 +32,9 @@ _GEO_DATA_LOC = [
     ),
 ]
 _GEO_DATA_COLS = ["DGUID", "geometry"]
-_CHUNKSIZE = 10000
 
 
 def run():
-    clear_databases()
     if not Geography.objects.all().exists():
         print("Database empty, building database")
         build_database()
@@ -45,23 +43,22 @@ def run():
 
 
 def build_database():
-    if not os.path.isfile(_FILENAME + ".csv"):
+    if not os.path.isfile(_FILENAME + ".parquet"):
         # Download CSV
         print("Downloading dta")
         download_csv(_CEN_URL, _FILENAME_KEEP, _FILENAME + ".csv", False)
         print("Finished download of census data")
-        # data = save_csv_parquet()
+        data = save_csv_parquet()
 
     else:
         print("Files already downloaded. No need to download files")
-        # data = load_parquet()
+        data = load_parquet()
 
-    for chunk in pd.read_csv(_FILENAME + ".csv", chunksize=_CHUNKSIZE, encoding="latin-1", dtype="str"):
-        print("Dataframe loaded")
-        print("DF columns:")
-        print(chunk.columns.values)
+    print("Dataframe loaded")
+    print("DF columns:")
+    print(data.columns.values)
 
-        build_databases(chunk)
+    build_databases(data)
 
 
 def download_csv(url, keep_file, filename, remove_first_line=False):
@@ -74,7 +71,7 @@ def download_csv(url, keep_file, filename, remove_first_line=False):
     :return: None
     """
     # Create a temporary directory
-    loc = os.path.join(BASE_DIR, _TEMP_LOC)
+    loc = os.path.join(BASE_DIR,_TEMP_LOC)
     os.mkdir(loc)
 
     # Download the file as a zip file and extract it
@@ -85,7 +82,7 @@ def download_csv(url, keep_file, filename, remove_first_line=False):
         zip_ref.extractall(loc)
 
     # Rename/move the file of interest and delete the temporary directory
-    os.rename(os.path.join(loc, keep_file), os.path.join(BASE_DIR, filename))
+    os.rename(loc + keep_file, os.path.join(BASE_DIR, filename))
     shutil.rmtree(loc)
 
     # Sometimes the first line has to be removed due to additional header text
@@ -270,4 +267,4 @@ def build_databases(df, should_add_geography=True):
 
     print("Database saved")
     if should_add_geography:
-        add_geography(suppress_prints=True)
+        add_geography()
