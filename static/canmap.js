@@ -60,7 +60,7 @@ function build_map() {
         }
 
         div.innerHTML +=
-            '<i style="background:' + getColor(leg_vals[leg_vals.length]) + '"></i> ≥ ' + leg_vals[leg_vals.length - 1] + '<br>';
+            '<i style="background:' + getColor(leg_vals[leg_vals.length]+1) + '"></i> ≥ ' + leg_vals[leg_vals.length - 1] + '<br>';
 
         div.innerHTML +=
             '<i style="background:' + naColor + '"></i> No Data';
@@ -119,8 +119,10 @@ function layer_click(e) {
 
 
 function getColor(d) {
+    console.log(d)
 
-    if (d == "N/A") {
+    if (d == "N/A" || typeof d == 'undefined') {
+        console.log("RUN!")
         return naColor;
     }
 

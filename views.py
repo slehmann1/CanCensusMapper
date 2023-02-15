@@ -35,7 +35,11 @@ class Map(View):
     _char_list = None
 
     GEO_LEVELS = ['Provinces and Territories',
-                  'Census Divisions', 'Census Subdivisions']
+                  'Census Divisions']
+
+    # Eliminate subdivisions to reduce server load
+    #GEO_LEVELS = ['Provinces and Territories',
+    #'Census Divisions', 'Census Subdivisions']
     _SINGULAR_GEO_LEVELS = ['Provinces and Territories',
                             'Census division', 'Census subdivision']
     _LEGEND_STEPS = 6
@@ -120,7 +124,7 @@ class Map(View):
             value = datum.value
             # Add properties
             props = f'"name":"{geo.geo_name}",'
-            if value is None:
+            if value is None or value =="nan" or value!=value:
                 props += '"value":'+'"N/A"'
             else:
                 props += f'"value":{str(value)}'

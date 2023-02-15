@@ -82,7 +82,7 @@ def download_csv(url, keep_file, filename, remove_first_line=False):
         zip_ref.extractall(loc)
 
     # Rename/move the file of interest and delete the temporary directory
-    os.rename(loc + keep_file, os.path.join(BASE_DIR, filename))
+    os.rename(os.path.join(loc, keep_file), os.path.join(BASE_DIR, filename))
     shutil.rmtree(loc)
 
     # Sometimes the first line has to be removed due to additional header text
